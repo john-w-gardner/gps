@@ -1,0 +1,15 @@
+20201208:
+satellite appears to be functioning properly.
+I spent alot of time trying to "debug" the iteration routine computet_s.
+I had a check at the end to return an error if (f37(tnext) > tol). 
+Turns out this is too much to ask, and I'm not 100% sure why. 
+We want to solve f(t) = 0, so I thought that requiring f(tnext) to be small was what we're after. 
+It turns out that even if t_k+1 - t_k (i.e. tnext - tlast) is very small (i.e. converged), 
+f(t_k+1) can still be large (~11454.125). 
+Surely this is because we blow up a very small number into two large ones and subtract, 
+losing some precision. 
+
+One thought was to iterate until f37(tnext) < tol but that would require more than 16 digits of precision in t. 
+When I tried that the iteration ran to 100 steps and didn't change the result. 
+
+
