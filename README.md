@@ -8,7 +8,7 @@ gcc rec.c -o rec
 ```
 **NOTE**: the executable names `satellite` and `receiver` are already taken by the professor given programs. 
 
-Then, pipe a trip file, for example `bm.dat` into `vehicle` then to your satellite then to your receiver:
+Then, pipe a trip file, e.g. `bm.dat`, into `vehicle` then to your satellite then to your receiver:
 ```
 cat bm.dat | java vehicle | sat | rec
 ```
