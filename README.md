@@ -1,6 +1,6 @@
 Model GPS receiver. 
 Uses trilateration to compute location given satellite data. 
-The (professor given) vehicle uses `<vehicle.class>` and `<angles.class>`. 
+The (professor given) vehicle uses `vehicle.class` and `angles.class`. 
 To run, compile the `C` code as
 ```
 gcc sat.c -o sat
