@@ -5,7 +5,6 @@ To run, compile the `C` code as
 ```
 gcc sat.c -o sat
 gcc rec.c -o rec
-
 ```
 **NOTE**: the executable names `satellite` and `receiver` are already taken by the professor given programs. 
 
