@@ -77,13 +77,34 @@ int main()
 // return satellite index if available, -1 otherwise
 int getSat(struct satInstance *satBuf, struct satInstance *s)
 {
-  /*
-  int status;
-
-  if (fgets(buf, LINELEN, stdin) != NULL)
+  char buf[LINELEN];  
+  
+  if ((*satBuf).idx > -1) 
     {
-      status = sscanf(buf, "%d %lf %lf %lf %lf", &(s->idx), &(s->t), &(s->x), &(s->y), &(s->z));
+      // update s with satBuf, set satBuf.idx to -1
+      updateSat(
+    }
+  else
+    {
+      // get new satellite from stdin, check if new
+      if (fgets(buf, LINELEN, stdin) != NULL)    
+        {
+          sscanf(buf, "%d %lf %lf %lf %lf", &(s->idx), &(s->t), &(s->x), &(s->y), &(s->z));
+          
+        }
+      else 
+        
+
+  
+    
+      
       if (status != NFIELD)
-        printf(
+        printf()
+          
   */
 }
+
+      // jam contents of s2 into s1
+void updateSat(struct satInstance *satBuf, struct satInstance *s)
+{
+  
