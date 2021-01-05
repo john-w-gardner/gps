@@ -3,8 +3,6 @@
 //#include "testSatFunctions.h"
 //#include <Accelerate/Accelerate.h>
 
-
-
 /* satellite component of gps system 
 
 1. read vehicle data and data.dat to set up satellites
