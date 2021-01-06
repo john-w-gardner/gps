@@ -32,79 +32,52 @@ struct vehInstance {
 
 int main()
 {
-
   // get constants
   readDataDat();
 
   // set up line buffer
   char line[LINELEN];
-  int epoch = 0; // number of lines we end up returning
-  char done = 0; // set to 1 when finished
-  int nsat = 0;  // number of satellites visible in current epoch
+  int epoch, done, nsat;
+  epoch = done = nsat = 0;
 
   // set up satellite array
   struct satInstance satArray[NSAT]; 
 
-  //  while (getSat(&satArray[0]) != NULL)
-  while (getSat(&satArray[nsat]))
+  // while new epoch of satellites available
+  while (getSatelliteArray(&satArray, &nsat))
     {
       epoch++; 
-      nsat = 0;
-      getSat(&satArray[nsat]);
-
-      while (getSat(&satArray[nsat+1]) > satArray[nsat].idx) { 
-        // not incrementing nsat in while() bc it appears on both sides of >
-        nsat++;
-      }
-
+      // calculations
       computeVehLocation(satArray, veh);
       computet_v(satArray[0], veh); /* test here: compare results using several different satellites */
+      // convert coords and print
       unrotate(veh);
       printveh(veh);
-      //resetlocation();
-    
-      if (currentSat == -1) {
-        //done = 1;
-        break;
-      }
-      else 
-        satArray[0] = satArray[nsat]; 
-    }
-   
+     
+      updateInitialGuess(); // for the next iteration/epoch
+    } 
 }
 
-// get next satellite from stdin
-// return satellite index if available, -1 otherwise
-int getSat(struct satInstance *satBuf, struct satInstance *s)
-{
-  char buf[LINELEN];  
-  
-  if ((*satBuf).idx > -1) 
-    {
-      // update s with satBuf, set satBuf.idx to -1
-      updateSat(
-    }
-  else
-    {
-      // get new satellite from stdin, check if new
-      if (fgets(buf, LINELEN, stdin) != NULL)    
-        {
-          sscanf(buf, "%d %lf %lf %lf %lf", &(s->idx), &(s->t), &(s->x), &(s->y), &(s->z));
-          
-        }
-      else 
-        
 
-  
-    
-      
-      if (status != NFIELD)
-        printf()
-          
-  */
+/* 
+ungetSat: push satellite back onto input (buffer) 
+ */
+int ungetSat(struct satInstance *satBuf, struct satInstance *s)
+{
+
 }
 
-      // jam contents of s2 into s1
-void updateSat(struct satInstance *satBuf, struct satInstance *s)
+
+
+
+
+
+// jam contents of s2 into s1
+void updateSat(struct satInstance *s1, struct satInstance *s2)
 {
-  
+  s1->idx = s2->idx;
+  s1->x = s2->x;
+  s1->y = s2->y;
+  s1->z = s2->z;
+  s1->t = s2->t;
+}
