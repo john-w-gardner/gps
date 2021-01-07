@@ -9,38 +9,36 @@
 
  */
 
-define MAXLEN 1000;
+#define MAXLEN 1000
 
-
-struct satInstance satbuf;
-satbuf.idx = -1;
+static struct satInstance satbuf = {0,0,0,0,-1};
 
 // read satellites for current epoch
-int getSatelliteArray(struct satInstance *satarr[], int *nsat)
+int getSatelliteArray(struct satInstance *satarr, int *nsat)
 {
   int i = 0;
   int status = 0;
 
-  if (satbuf.idx = -1) // buffer empty
+  if (satbuf.idx == -1) // buffer empty
     {
-      status = getSatellite(satarr[i]);
+      status = getSatellite(satarr);
     }
   else // put buffer satellite into array
-    updateSatellite(satarr[i], &satbuf);
+    updateSatellite(satarr, &satbuf);
 
   // populate array
-  while ((status = getSatellite(satbuf)) > (*satarr)[i++].idx)
+  while ((status = getSatellite(&satbuf)) > (*satarr++).idx)
     {
-      updateSatellite(satarr[i], &satbuf);
+      updateSatellite(satarr, &satbuf);
     }      
   
   *nsat = i;
 
-  if (status = -1)
+  if (status == -1)
     return 0;
   else
     {
-      updateSatellite(&satbuf, satarr[i]);
+      updateSatellite(&satbuf, satarr);
       return 1; 
     }
 
@@ -66,7 +64,7 @@ int getSatellite(struct satInstance *s)
   if (fgets(buf, MAXLEN, stdin) != NULL)
     {
       sscanf(buf, "%d %lf %lf %lf %lf", &(s->idx), &(s->t), &(s->x), &(s->y), &(s->z));
-      return s.idx;
+      return s->idx;
     }
   else 
     return -1;
