@@ -33,6 +33,7 @@ int getSatelliteArray(struct satInstance *satarr, int *nsat)
     }      
   
   *nsat = i;
+  printf("status: %d\n", status);
 
   if (status == -1)
     return 0;
