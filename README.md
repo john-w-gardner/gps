@@ -6,7 +6,7 @@ To run, compile the `C` code as
 gcc satellite.c -o sat
 gcc receiver.c -o rec
 ```
-Then, pipe a trip file, e.g. `bm.dat`, into `vehicle` then to your satellite then to your receiver:
+Then, pipe a trip file, e.g. `bm.dat`, into `vehicle` then to the satellite then to the receiver:
 ```
 cat bm.dat | java vehicle | sat | rec
 ```
