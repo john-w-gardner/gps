@@ -10,7 +10,7 @@ Then, pipe a trip file, e.g. `bm.dat`, into `vehicle` then to the satellite then
 ```
 cat bm.dat | java vehicle | sat | rec
 ```
-This should approximate the same location data given by the vehicle as in the command line 
+This should approximate the location data given by the vehicle as in the command line 
 ```
 cat bm.dat | java vehicle 
 ```
