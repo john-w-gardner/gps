@@ -1,0 +1,1 @@
+../nla/qrSolve.c
