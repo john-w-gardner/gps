@@ -1,3 +1,8 @@
+#include <stdio.h>
+#include <math.h>
+#include "gps.h"
+#include "mat.h"
+
 /* receiver component of gps system
 compute vehicle location and time using satellite data
 1. collect satellite data from stdin, constants from data.dat
@@ -5,28 +10,27 @@ compute vehicle location and time using satellite data
 3. unrotate, print
 */
 
-#include <stdio.h>
-#include <math.h>
-#include "gps.h"
-#include "mat.h"
 
 
 int main()
 {
+  
   // get constants
-  void readDataDatII(double *pi, double *c, double *R, double *s);
+  //void readDataDatII(double *pi, double *c, double *R, double *s);
 
-  // set up line buffer
-  char line[LINELEN];
+  /*
+  // setup 
   int epoch, done, nsat, status;
   epoch = done = nsat = status = 0;
   int i;
+  struct vehR3 vehicle;
+  struct latlong cartVehicle;
 
   // initial position
-  void computeInitialGuess(&vehicle);
+  computeInitialVehicle(&vehicle);
 
   // set up satellite array
- struct satInstance satArray[NSAT]; 
+ struct satR3 satArray[NSAT]; 
 
   // while new epoch of satellites available
   while (done == 0)
@@ -37,7 +41,7 @@ int main()
 
       // calculations
       computeVehLocation(satArray, &vehicle, nsat);
-      vehicle.t = computeVehicleTime(satArray, vehicle); 
+      vehicle.t = computeVehicleTime(satArray, nsat, vehicle); 
 
       // convert coords and print
       convertCoords(vehicle, &cartVehicle);
@@ -46,5 +50,6 @@ int main()
       if (status == -1)
         done = 1;
     } 
+  */
 }
 

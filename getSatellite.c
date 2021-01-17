@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "receiver.h"
+#include "gps.h"
 
 /* 
    populate satellite array (for receiver.c)
@@ -11,13 +11,15 @@
 
 #define MAXLEN 1000
 
-static struct satInstance satbuf = {0,0,0,0,-1};
+static struct satR3 satbuf = {0,0,0,0,-1};
 
 // read satellites for current epoch
-int getSatelliteArray(struct satInstance *satarr, int *nsat)
+int getSatelliteArray(struct satR3 *satarr, int *nsat)
 {
   int i = 0;
   int status = 0;
+  struct satR3 *iptr;
+  iptr = satarr;
 
   if (satbuf.idx == -1) // buffer empty
     {
@@ -32,11 +34,10 @@ int getSatelliteArray(struct satInstance *satarr, int *nsat)
       updateSatellite(satarr, &satbuf);
     }      
   
-  *nsat = i;
-  printf("status: %d\n", status);
+  *nsat = satarr - iptr;
 
   if (status == -1)
-    return 0;
+    return -1;
   else
     {
       updateSatellite(&satbuf, satarr);
@@ -46,7 +47,7 @@ int getSatelliteArray(struct satInstance *satarr, int *nsat)
 }
 
 // put contents of s2 into s1
-void updateSatellite(struct satInstance *s1, struct satInstance *s2)
+void updateSatellite(struct satR3 *s1, struct satR3 *s2)
 {
   s1->idx = s2->idx;
   s1->x = s2->x;
@@ -58,7 +59,7 @@ void updateSatellite(struct satInstance *s1, struct satInstance *s2)
 /* read satellite struct from stdin, 
    return index or -1 if EOF
 */
-int getSatellite(struct satInstance *s)
+int getSatellite(struct satR3 *s)
 {
   char buf[MAXLEN];
 
@@ -92,3 +93,4 @@ int getSatellite(struct satInstance *s)
    once at the beginning of main to let us know to go to stdin for first element,
    then at the end to let us know we're done.
  */
+

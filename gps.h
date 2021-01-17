@@ -39,6 +39,7 @@ struct satR3 {
   double y;
   double z;
   double t;
+  int idx;
   int above; 
 };
 
@@ -70,7 +71,7 @@ struct satellite {
   double phase; // offsetting angle, in radians
 };
 
-
+// gps.c
 // SATELLITE ONLY FUNCTIONS
 int getVeh(struct vehR3 *v);
 void rotateVeh(struct vehR3 *r) ;
@@ -93,34 +94,38 @@ void iterStatus(struct vehR3 v, struct satellite s, double f, double fp, double 
 void convertVeh(struct latlong *l, struct vehR3 *r) ;
 
 // RECEIVER ONLY FUNCTIONS
-void printSatellite(struct satR3 s);
+//void printSatellite(struct satR3 s);
 void printVehicle(struct latlong v);
-int computeVehLocation(struct satR3 satarr[], struct vehR3 *veh, int nsat);
+void computeVehLocation(struct satR3 satarr[], struct vehR3 *veh, int nsat);
 void computeF(struct satR3 satarr[], int nsat, struct vehR3 veh, double (*F)[]);
 double computeAi(struct satR3 si, struct satR3 si1, struct vehR3 veh);
 double computeNi(struct satR3 s, struct vehR3 v);
 double computeXi(struct satR3 si, struct satR3 si1, struct vehR3 v);
 double computeYi(struct satR3 si, struct satR3 si1, struct vehR3 v);
 double computeZi(struct satR3 si, struct satR3 si1, struct vehR3 v);
-void computeJ(double (*J)[], struct satR3 satarr[], struct vehR3 veh, int nsat);
-double fxx(struct satR3 satarr[], struct vehR3 veh, int nsat);
-double Xx(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat);
-double fxy(struct satR3 satarr[], struct vehR3 veh, int nsat);
-double Xy(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat);
-double fxz(struct satR3 satarr[], struct vehR3 veh, int nsat);
-double Xz(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat);
-double fyy(struct satR3 satarr[], struct vehR3 veh, int nsat);
-double Yy(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat);
-double fyz(struct satR3 satarr[], struct vehR3 veh, int nsat);
-double Yz(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat);
-double fzz(struct satR3 satarr[], struct vehR3 veh, int nsat);
-double Zz(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat);
+void computeJ(struct satR3 satarr[], int nsat, struct vehR3 veh, double (*J)[]);
+double fxx(struct satR3 satarr[], int nsat, struct vehR3 veh);
+double computeXx(struct satR3 si, struct satR3 si1, struct vehR3 v);
+double fxy(struct satR3 satarr[], int nsat, struct vehR3 veh);
+double computeXy(struct satR3 si, struct satR3 si1, struct vehR3 v);
+double fxz(struct satR3 satarr[], int nsat, struct vehR3 veh);
+double computeXz(struct satR3 si, struct satR3 si1, struct vehR3 v);
+double fyy(struct satR3 satarr[], int nsat, struct vehR3 veh);
+double computeYy(struct satR3 si, struct satR3 si1, struct vehR3 v);
+double fyz(struct satR3 satarr[], int nsat, struct vehR3 veh);
+double computeYz(struct satR3 si, struct satR3 si1, struct vehR3 v);
+double fzz(struct satR3 satarr[], int nsat, struct vehR3 veh);
+double computeZz(struct satR3 si, struct satR3 si1, struct vehR3 v);
 void readDataDatII(double *pi, double *c, double *R, double *s);
-double computeVehTime(struct satR3 satarr[], int n, struct vehR3 veh);
+double computeVehicleTime(struct satR3 satarr[], int n, struct vehR3 veh);
 void convertCoords(struct vehR3 vehCart, struct latlong *vehLL);
 void unrotate(struct vehR3 *v);
 void toLatitude(struct vehR3 v, struct latlong *ll);
-void toLongitude(struct vehR3 v, struct latlong ll);
-void computeInitialGuess(struct vehR3 *v);
+void toLongitude(struct vehR3 v, struct latlong *ll);
+void computeInitialVehicle(struct vehR3 *v);
+// end gps.c
 
-
+// from getSatellite.c
+int getSatelliteArray(struct satR3 *satarr, int *nsat); 
+void updateSatellite(struct satR3 *s1, struct satR3 *s2);
+int getSatellite(struct satR3 *s);

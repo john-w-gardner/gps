@@ -298,8 +298,8 @@ double fp39(struct vehR3 v, struct satellite s, double t) {
   scaleVec(&xs, lead, 3); 
 
   // compute trig-scaled satellite direction vectors in []
-  scaleVec(&U, -sin(arg), n);
-  scaleVec(&V, cos(arg), n);
+  scaleVec(&U, -sin(arg), 3);
+  scaleVec(&V, cos(arg), 3);
   addVec(&U, V, 3);
 
   // (x_s-x_v) \dot [-usin() + vcos()]
@@ -490,12 +490,13 @@ void unrotate(double x, double y, double z, double t) {
 }
 */
 
-
+/*
 void printSatellite(struct satR3 s)
 {
   printf("satellite %d: \n", s.idx);
   printf("x %.15lf y %.15lf z %.15lf t %.15lf\n", s.x, s.y, s.z, s.t);
 }
+*/
 
 void printVehicle(struct latlong v)
 {
@@ -510,21 +511,20 @@ void printVehicle(struct latlong v)
    F is its gradient, J the jacobian of F
    until satisfied, solve Js = -F, set x = x + s
  */
-int computeVehLocation(struct satR3 satarr[], struct vehR3 *veh, int nsat)
+void computeVehLocation(struct satR3 satarr[], struct vehR3 *veh, int nsat)
 {
-  int done = 0;
-  double x[3] = {veh.x, veh.y, veh.z};
-  double s[3];
+  double stepsize;
   double tol = 0.01;
   int ndim = 3;
+  double s[3];
   double F[ndim];
   double J[ndim*ndim];
 
   while (stepsize < tol)
     {
       computeF(satarr, nsat, *veh, &F);
-      computeJ(satarr, *veh, &J);
-      solveAxb(J, 3, s, F);
+      computeJ(satarr, nsat, *veh, &J);
+      qrSolve(J, 3, &s, F);
       stepsize = eucnorm(s, 3);
     }
 }
@@ -582,6 +582,7 @@ double computeXi(struct satR3 si, struct satR3 si1, struct vehR3 v)
   double Ni1 = computeNi(si1, v);
 
   result = -(si1.x - v.x)/Ni1 + (si.x - v.x)/Ni;
+  return result;
 } 
 
 double computeYi(struct satR3 si, struct satR3 si1, struct vehR3 v)
@@ -591,6 +592,7 @@ double computeYi(struct satR3 si, struct satR3 si1, struct vehR3 v)
   double Ni1 = computeNi(si1, v);
 
   result = -(si1.y - v.y)/Ni1 + (si.y - v.y)/Ni;
+  return result;
 } 
 
 double computeZi(struct satR3 si, struct satR3 si1, struct vehR3 v)
@@ -600,6 +602,7 @@ double computeZi(struct satR3 si, struct satR3 si1, struct vehR3 v)
   double Ni1 = computeNi(si1, v);
 
   result = -(si1.z - v.z)/Ni1 + (si.z - v.z)/Ni;
+  return result;
 } 
 
 // end computeF support functions
@@ -609,14 +612,14 @@ double computeZi(struct satR3 si, struct satR3 si1, struct vehR3 v)
    J must have size 9.. 
    Reading into row-major form matrix, though irrelevant since since symmetric
 */
-void computeJ(double (*J)[], struct satR3 satarr[], struct vehR3 veh, int nsat)
+void computeJ(struct satR3 satarr[], int nsat, struct vehR3 veh, double (*J)[])
 {
-  (*J)[0] = fxx(satarr[], nsat, veh);
-  (*J)[1] = (*J)[3] = fxy(satarr[], nsat, veh);
-  (*J)[2] = (*J)[6] = fxz(satarr[], nsat, veh);
-  (*J)[4] = fyy(satarr[], nsat, veh);
-  (*J)[5] = (*J)[7] = fyz(satarr[], nsat, veh);
-  (*J)[8] = fzz(satarr[], nsat, veh);
+  (*J)[0] = fxx(satarr, nsat, veh);
+  (*J)[1] = (*J)[3] = fxy(satarr, nsat, veh);
+  (*J)[2] = (*J)[6] = fxz(satarr, nsat, veh);
+  (*J)[4] = fyy(satarr, nsat, veh);
+  (*J)[5] = (*J)[7] = fyz(satarr, nsat, veh);
+  (*J)[8] = fzz(satarr, nsat, veh);
 }
 
 /* 
@@ -626,24 +629,24 @@ void computeJ(double (*J)[], struct satR3 satarr[], struct vehR3 veh, int nsat)
    etc
    careful: these are all very similar 
 */
-double fxx(struct satR3 satarr[], struct vehR3 veh, int nsat)
+double fxx(struct satR3 satarr[], int nsat, struct vehR3 veh)
 {
   double result = 0;
-  double Xi, Ai, Xx
+  double Xi, Ai, Xx;
   int i;
 
   while (i < nsat-2)
     {
       Xi = computeXi(satarr[i], satarr[i+1], veh);
       Ai = computeAi(satarr[i], satarr[i+1], veh);
-      Xx = Xx(satarr[i], satarr[i+1], veh);
+      Xx = computeXx(satarr[i], satarr[i+1], veh);
       result += 2*(pow(Xi,2) + Ai*Xx);
     }  
   return result;
 }
 
 // derivative of X_i wrt x
-double Xx(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat)
+double computeXx(struct satR3 si, struct satR3 si1, struct vehR3 v)
 {
   double Ni, Ni1, a, b, result;
   Ni = computeNi(si, v);
@@ -656,7 +659,7 @@ double Xx(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat)
   return result;
 }
 
-double fxy(struct satR3 satarr[], struct vehR3 veh, int nsat)
+double fxy(struct satR3 satarr[], int nsat, struct vehR3 veh)
 {
   double Xi, Yi, Ai, Xy;
   double result = 0;
@@ -674,7 +677,7 @@ double fxy(struct satR3 satarr[], struct vehR3 veh, int nsat)
   return result;
 }
 
-double Xy(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat)
+double computeXy(struct satR3 si, struct satR3 si1, struct vehR3 v)
 {
   double Ni, Ni1, a, b, result;
   Ni = computeNi(si, v);
@@ -687,7 +690,7 @@ double Xy(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat)
   return result;
 }
 
-double fxz(struct satR3 satarr[], struct vehR3 veh, int nsat)
+double fxz(struct satR3 satarr[], int nsat, struct vehR3 veh)
 {
   int i;
   double Xi, Zi, Ai, Xz;
@@ -696,16 +699,16 @@ double fxz(struct satR3 satarr[], struct vehR3 veh, int nsat)
   while (i < nsat-2)
     {
       Xi = computeXi(satarr[i], satarr[i+1], veh);
-      Yi = computeZi(satarr[i], satarr[i+1], veh);
+      Zi = computeZi(satarr[i], satarr[i+1], veh);
       Ai = computeAi(satarr[i], satarr[i+1], veh);
-      Xz = Xz(satarr[i], satarr[i+1], veh);
+      Xz = computeXz(satarr[i], satarr[i+1], veh);
       result += 2*(Xi*Zi + Ai*Xz);
     }
   
   return result;
 }
 
-double Xz(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat)
+double computeXz(struct satR3 si, struct satR3 si1, struct vehR3 v)
 {
   double Ni, Ni1, a, b, result;
 
@@ -719,10 +722,10 @@ double Xz(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat)
   return result;
 }
 
-double fyy(struct satR3 satarr[], struct vehR3 veh, int nsat)
+double fyy(struct satR3 satarr[], int nsat, struct vehR3 veh)
 {
   double result = 0;
-  double Yi, Ai, Yy
+  double Yi, Ai, Yy;
   int i;
 
 
@@ -730,13 +733,13 @@ double fyy(struct satR3 satarr[], struct vehR3 veh, int nsat)
     {
       Yi = computeYi(satarr[i], satarr[i+1], veh);
       Ai = computeAi(satarr[i], satarr[i+1], veh);
-      Yy = Yy(satarr[i], satarr[i+1], veh);
+      Yy = computeYy(satarr[i], satarr[i+1], veh);
       result += 2*(pow(Yi,2) + Ai*Yy);
     }  
   return result;
 }
 
-double Yy(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat)
+double computeYy(struct satR3 si, struct satR3 si1, struct vehR3 v)
 {
   double Ni, Ni1, a, b, result;
   Ni = computeNi(si, v);
@@ -749,10 +752,10 @@ double Yy(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat)
   return result;
 }
 
-double fyz(struct satR3 satarr[], struct vehR3 veh, int nsat)
+double fyz(struct satR3 satarr[], int nsat, struct vehR3 veh)
 {
   int i;
-  double Zi, Yi, Ai, Yz
+  double Zi, Yi, Ai, Yz;
   double result = 0;
 
   while (i < nsat-2)
@@ -760,14 +763,14 @@ double fyz(struct satR3 satarr[], struct vehR3 veh, int nsat)
       Zi = computeZi(satarr[i], satarr[i+1], veh);
       Yi = computeYi(satarr[i], satarr[i+1], veh);
       Ai = computeAi(satarr[i], satarr[i+1], veh);
-      Yz = Yz(satarr[i], satarr[i+1], veh);
-      result += 2*(Zi*Yi + Ai*Zy);
+      Yz = computeYz(satarr[i], satarr[i+1], veh);
+      result += 2*(Zi*Yi + Ai*Yz);
     }
   
   return result;
 }
 
-double Yz(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat)
+double computeYz(struct satR3 si, struct satR3 si1, struct vehR3 v)
 {
   double Ni, Ni1, a, b, result;
   Ni = computeNi(si, v);
@@ -780,10 +783,10 @@ double Yz(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat)
   return result;
 }
 
-double fzz(struct satR3 satarr[], struct vehR3 veh, int nsat)
+double fzz(struct satR3 satarr[], int nsat, struct vehR3 veh)
 {
   double result = 0;
-  double Zi, Ai, Zz
+  double Zi, Ai, Zz;
   int i;
 
 
@@ -791,13 +794,13 @@ double fzz(struct satR3 satarr[], struct vehR3 veh, int nsat)
     {
       Zi = computeZi(satarr[i], satarr[i+1], veh);
       Ai = computeAi(satarr[i], satarr[i+1], veh);
-      Zz = Zz(satarr[i], satarr[i+1], veh);
+      Zz = computeZz(satarr[i], satarr[i+1], veh);
       result += 2*(pow(Zi,2) + Ai*Zz);
     }  
   return result;
 }
 
-double Zz(struct satR3 si, struct satR3 si1, struct vehR3 v, int nsat)
+double computeZz(struct satR3 si, struct satR3 si1, struct vehR3 v)
 {
   double Ni, Ni1, a, b, result;
   Ni = computeNi(si, v);
@@ -838,9 +841,10 @@ void readDataDatII(double *pi, double *c, double *R, double *s)
 
 // compute t_s given vehicle location
 // use all satellites and eqn (42)
-double computeVehTime(struct satR3 satarr[], int n, struct vehR3 veh)
+double computeVehicleTime(struct satR3 satarr[], int n, struct vehR3 veh)
 {
   int i;
+  double Ni;
   double result = 0;
 
   for (i=0; i<n; i++)
@@ -875,7 +879,7 @@ void convertCoords(struct vehR3 vehCart, struct latlong *vehLL)
   toLongitude(vehCart, vehLL);
 
   vehLL->alt = sqrt(pow(vehCart.x,2) + pow(vehCart.y,2) + pow(vehCart.z,2)) - R;
-  vehLL->t = vehCart.t
+  vehLL->t = vehCart.t;
 }
 
 
@@ -884,7 +888,7 @@ void convertCoords(struct vehR3 vehCart, struct latlong *vehLL)
 void unrotate(struct vehR3 *v)
 {
   double tx, ty;
-  double alpha = -2.0*pi*v.t/s; // sign flipped for undoing
+  double alpha = -2.0*pi*v->t/s; // sign flipped for undoing
 
   tx = v->x*cos(alpha) - v->y*sin(alpha);
   ty = v->x*sin(alpha) + v->y*cos(alpha);
@@ -928,21 +932,23 @@ void toLatitude(struct vehR3 v, struct latlong *ll)
 
 }
 
-void toLongitude(struct vehR3 v, struct latlong ll)
+// longitude conversion, see (20)
+void toLongitude(struct vehR3 v, struct latlong *ll)
 {
-  // FIX FOR RECEIVER: need to include x=0 cases
-  if (x > 0.0) {
-    if (y > 0.0) 
-      lm = atan(y/x);
+  double lm, temp;
+
+  if (v.x > 0.0) { 
+    if (v.y > 0.0) 
+      lm = atan(v.y/v.x);
     else
-      lm = 2.0*pi + atan(y/x);
+      lm = 2.0*pi + atan(v.y/v.x);
   }  
-  else if (x == 0.0) // longitude (lambda) could be anything
+  else if (v.x == 0.0) // longitude (lambda) could be anything
     {
       lm = 0.0; 
     }
   else
-    lm = pi + atan(y/x);
+    lm = pi + atan(v.y/v.x);
 
   // hemisphere determination
   lm = 360.0*lm/(2.0*pi);
@@ -957,13 +963,13 @@ void toLongitude(struct vehR3 v, struct latlong ll)
 
   // decompose into degrees, minutes, seconds
   ll->lmd = (int) lm; 
-  temp = (lm - lmd)*60.0; // minutes + remainder
+  temp = (lm - ll->lmd)*60.0; // minutes + remainder
   ll->lmm = (int) temp;
-  ll->lms = (temp - lmm)*60; //seconds + remainder (as desired)
+  ll->lms = (temp - ll->lmm)*60; //seconds + remainder (as desired)
 }
 
 
-void computeInitialGuess(struct vehR3 *v)
+void computeInitialVehicle(struct vehR3 *v)
 {
   // using b12 (11) as starting point 
   struct latlong ll = {0.0, 40, 45, 55.0, 1, 111, 50, 58.0, -1, 1372.0};
