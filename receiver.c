@@ -13,12 +13,12 @@ compute vehicle location and time using satellite data
 
 
 int main()
-{
-  
-  // get constants
-  //void readDataDatII(double *pi, double *c, double *R, double *s);
+{  
+  printf("testing..\n");
 
-  /*
+  // get constants
+  readDataDatII(&pi, &c, &R, &s);
+
   // setup 
   int epoch, done, nsat, status;
   epoch = done = nsat = status = 0;
@@ -30,7 +30,7 @@ int main()
   computeInitialVehicle(&vehicle);
 
   // set up satellite array
- struct satR3 satArray[NSAT]; 
+  struct satR3 satArray[NSAT]; 
 
   // while new epoch of satellites available
   while (done == 0)
@@ -50,6 +50,5 @@ int main()
       if (status == -1)
         done = 1;
     } 
-  */
 }
 

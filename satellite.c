@@ -46,5 +46,6 @@ int main() {
       }
     }
   }
+  fclose(stdin);
 }
 

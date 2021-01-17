@@ -6,6 +6,10 @@
 helper functions for both satellite and receiver
 */
 
+
+#define DEBUGTIME 1
+
+
 // read vehicle data from std_in 
 // returns 1 if another line found, else 0
 int getVeh(struct vehR3 *v){
@@ -516,14 +520,16 @@ void computeVehLocation(struct satR3 satarr[], struct vehR3 *veh, int nsat)
   double stepsize;
   double tol = 0.01;
   int ndim = 3;
-  double s[3];
+  double s[ndim];
   double F[ndim];
   double J[ndim*ndim];
 
+  printf("inside computeVehLocation\n");
   while (stepsize < tol)
     {
       computeF(satarr, nsat, *veh, &F);
-      computeJ(satarr, nsat, *veh, &J);
+      computeJ(satarr, nsat, *veh, J);
+      printf("before qrSolve\n");
       qrSolve(J, 3, &s, F);
       stepsize = eucnorm(s, 3);
     }
@@ -543,7 +549,7 @@ void computeF(struct satR3 satarr[], int nsat, struct vehR3 veh, double (*F)[])
   double Ai, Xi, Yi, Zi;
   int i;
   
-  while (i < nsat-2) // n-1 equations
+  for (i=0; i<nsat-2; i++)
     {
       Ai = computeAi(satarr[i], satarr[i+1], veh);
       Xi = computeXi(satarr[i], satarr[i+1], veh);
@@ -612,14 +618,16 @@ double computeZi(struct satR3 si, struct satR3 si1, struct vehR3 v)
    J must have size 9.. 
    Reading into row-major form matrix, though irrelevant since since symmetric
 */
-void computeJ(struct satR3 satarr[], int nsat, struct vehR3 veh, double (*J)[])
+//void computeJ(struct satR3 satarr[], int nsat, struct vehR3 veh, double (*J)[])
+void computeJ(struct satR3 satarr[], int nsat, struct vehR3 veh, double J[])
 {
-  (*J)[0] = fxx(satarr, nsat, veh);
-  (*J)[1] = (*J)[3] = fxy(satarr, nsat, veh);
-  (*J)[2] = (*J)[6] = fxz(satarr, nsat, veh);
-  (*J)[4] = fyy(satarr, nsat, veh);
-  (*J)[5] = (*J)[7] = fyz(satarr, nsat, veh);
-  (*J)[8] = fzz(satarr, nsat, veh);
+  printf("inside computeJ\n");
+  J[0] = fxx(satarr, nsat, veh);
+  J[1] = J[3] = fxy(satarr, nsat, veh);
+  J[2] = J[6] = fxz(satarr, nsat, veh);
+  J[4] = fyy(satarr, nsat, veh);
+  J[5] = J[7] = fyz(satarr, nsat, veh);
+  J[8] = fzz(satarr, nsat, veh);
 }
 
 /* 
@@ -634,8 +642,9 @@ double fxx(struct satR3 satarr[], int nsat, struct vehR3 veh)
   double result = 0;
   double Xi, Ai, Xx;
   int i;
+  printf("inside fxx\n");
 
-  while (i < nsat-2)
+  for (i=0; i<nsat-2; i++)
     {
       Xi = computeXi(satarr[i], satarr[i+1], veh);
       Ai = computeAi(satarr[i], satarr[i+1], veh);
@@ -665,7 +674,7 @@ double fxy(struct satR3 satarr[], int nsat, struct vehR3 veh)
   double result = 0;
   int i;
   
-  while (i < nsat-2)
+  for (i=0; i<nsat-2; i++)
     {
       Xi = computeXi(satarr[i], satarr[i+1], veh);
       Yi = computeYi(satarr[i], satarr[i+1], veh);
@@ -696,7 +705,7 @@ double fxz(struct satR3 satarr[], int nsat, struct vehR3 veh)
   double Xi, Zi, Ai, Xz;
   double result = 0;
 
-  while (i < nsat-2)
+  for (i=0; i<nsat-2; i++)
     {
       Xi = computeXi(satarr[i], satarr[i+1], veh);
       Zi = computeZi(satarr[i], satarr[i+1], veh);
@@ -729,7 +738,7 @@ double fyy(struct satR3 satarr[], int nsat, struct vehR3 veh)
   int i;
 
 
-  while (i < nsat-2)
+  for (i=0; i<nsat-2; i++)
     {
       Yi = computeYi(satarr[i], satarr[i+1], veh);
       Ai = computeAi(satarr[i], satarr[i+1], veh);
@@ -758,7 +767,7 @@ double fyz(struct satR3 satarr[], int nsat, struct vehR3 veh)
   double Zi, Yi, Ai, Yz;
   double result = 0;
 
-  while (i < nsat-2)
+  for (i=0; i<nsat-2; i++)
     {
       Zi = computeZi(satarr[i], satarr[i+1], veh);
       Yi = computeYi(satarr[i], satarr[i+1], veh);
@@ -789,8 +798,7 @@ double fzz(struct satR3 satarr[], int nsat, struct vehR3 veh)
   double Zi, Ai, Zz;
   int i;
 
-
-  while (i < nsat-2)
+  for (i=0; i<nsat-2; i++)
     {
       Zi = computeZi(satarr[i], satarr[i+1], veh);
       Ai = computeAi(satarr[i], satarr[i+1], veh);
@@ -847,12 +855,19 @@ double computeVehicleTime(struct satR3 satarr[], int n, struct vehR3 veh)
   double Ni;
   double result = 0;
 
+  if (DEBUGTIME == 1)
+    {
+      printf("inside computeVehicleTime\n");
+      printf("c: %.15lf n: %d\n", c, n);
+    }
+
+
   for (i=0; i<n; i++)
     {
       Ni = computeNi(satarr[i], veh);
       result += Ni + c*satarr[i].t;
     }
-
+  
   result = result/(n*c);
   return result;
 }
