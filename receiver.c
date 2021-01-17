@@ -14,8 +14,6 @@ compute vehicle location and time using satellite data
 
 int main()
 {  
-  printf("testing..\n");
-
   // get constants
   readDataDatII(&pi, &c, &R, &s);
 
@@ -29,7 +27,6 @@ int main()
 
   // initial position
   computeInitialVehicle(&vehicle);
-  printVehR3(vehicle);
 
   // while new epoch of satellites available
   while (done == 0)
@@ -40,7 +37,6 @@ int main()
 
       // get current group of satellites
       status = getSatelliteArray(satArray, &nsat);
-      printf("epoch: %d nsat: %d\n", epoch, nsat);
 
       // calculations
       computeVehLocation(satArray, &vehicle, nsat);
