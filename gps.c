@@ -6,8 +6,14 @@
 helper functions for both satellite and receiver
 */
 
-
-#define DEBUGTIME 1
+// debug 
+#define DEBUGTIME 0
+#define CHECKSAT 0
+#define CHECKITER 0
+#define CHECKF37 0
+#define CHECKFP39 0
+#define CHECKVEH 0
+#define CHECKx35 0
 
 
 // read vehicle data from std_in 
@@ -508,6 +514,19 @@ void printVehicle(struct latlong v)
          v.t, v.psd, v.psm, v.pss, v.NS, v.lmd, v.lmm, v.lms, v.EW, v.alt);
 }
 
+void printVehR3(struct vehR3 v)
+{
+  printf("%.16lf %.16lf %.16lf %.16lf \n", 
+         v.x, v.y, v.z, v.t);
+}
+
+void printSatR3(struct satR3 s)
+{
+  printf("satellite %d: \n", s.idx);
+  printf("x %.15lf y %.15lf z %.15lf t %.15lf\n", s.x, s.y, s.z, s.t);
+}
+
+
 
 /* computeVehLocation():
    newton iteration for nonlinear system, see (58)
@@ -517,22 +536,35 @@ void printVehicle(struct latlong v)
  */
 void computeVehLocation(struct satR3 satarr[], struct vehR3 *veh, int nsat)
 {
-  double stepsize;
+  int nstep = 0;
+  double stepsize=1;
   double tol = 0.01;
   int ndim = 3;
   double s[ndim];
   double F[ndim];
   double J[ndim*ndim];
 
-  printf("inside computeVehLocation\n");
-  while (stepsize < tol)
+  //printf("inside computeVehLocation\n");
+  while (stepsize > tol && nstep++ < MAXSTEP)
     {
-      computeF(satarr, nsat, *veh, &F);
+      nstep++;
+      //printf("nstep: %d\n", nstep);
+      computeF(satarr, nsat, *veh, F);
       computeJ(satarr, nsat, *veh, J);
-      printf("before qrSolve\n");
+      //printf("J and F:\n");
+      //printmat(J, ndim, ndim);
+      //printmat(F, ndim, 1);
+
+      scaleVec(&F, -1.0, ndim);
       qrSolve(J, 3, &s, F);
+      //printf("after qrSolve\n");
+      //printf("want F ~0.. |F| = %.16lf\n", eucnorm(F, 3));
+      //testSolve(J, 3, s, F);
+      updateVehLocation(veh, s);
       stepsize = eucnorm(s, 3);
     }
+  // printf("result location:\n");
+  // printVehR3(*veh);
 }
 
 
@@ -540,24 +572,26 @@ void computeVehLocation(struct satR3 satarr[], struct vehR3 *veh, int nsat)
    compute gradient of least squares function as in (66)
    break this down into partial derivatives and  N_i, A_i
  */
-void computeF(struct satR3 satarr[], int nsat, struct vehR3 veh, double (*F)[])
+void computeF(struct satR3 satarr[], int nsat, struct vehR3 veh, double F[])
 {
   // reset
-  (*F)[0] = 0;
-  (*F)[1] = 0;
-  (*F)[2] = 0;
+  F[0] = 0;
+  F[1] = 0;
+  F[2] = 0;
   double Ai, Xi, Yi, Zi;
   int i;
   
+  //  printf("inside computeF\n");
   for (i=0; i<nsat-2; i++)
     {
+      //  printSatR3(satarr[i]);
       Ai = computeAi(satarr[i], satarr[i+1], veh);
       Xi = computeXi(satarr[i], satarr[i+1], veh);
       Yi = computeYi(satarr[i], satarr[i+1], veh);
       Zi = computeZi(satarr[i], satarr[i+1], veh);
-      (*F)[0] += 2*Ai*Xi;
-      (*F)[1] += 2*Ai*Yi;
-      (*F)[2] += 2*Ai*Zi;
+      F[0] += 2*Ai*Xi;
+      F[1] += 2*Ai*Yi;
+      F[2] += 2*Ai*Zi;
     }
 }
 
@@ -621,7 +655,7 @@ double computeZi(struct satR3 si, struct satR3 si1, struct vehR3 v)
 //void computeJ(struct satR3 satarr[], int nsat, struct vehR3 veh, double (*J)[])
 void computeJ(struct satR3 satarr[], int nsat, struct vehR3 veh, double J[])
 {
-  printf("inside computeJ\n");
+  //printf("inside computeJ\n");
   J[0] = fxx(satarr, nsat, veh);
   J[1] = J[3] = fxy(satarr, nsat, veh);
   J[2] = J[6] = fxz(satarr, nsat, veh);
@@ -642,7 +676,7 @@ double fxx(struct satR3 satarr[], int nsat, struct vehR3 veh)
   double result = 0;
   double Xi, Ai, Xx;
   int i;
-  printf("inside fxx\n");
+  //printf("inside fxx\n");
 
   for (i=0; i<nsat-2; i++)
     {
@@ -823,6 +857,15 @@ double computeZz(struct satR3 si, struct satR3 si1, struct vehR3 v)
 
 // end computeJ support functions
 
+// update vehicle location in newton iteration
+void updateVehLocation(struct vehR3 *v, double s[])
+{
+  v->x = v->x + s[0];
+  v->y = v->y + s[1];
+  v->z = v->z + s[2];
+}
+
+
 void readDataDatII(double *pi, double *c, double *R, double *s) 
 {
   // note: strong dependency on organization of data.dat 
@@ -854,21 +897,25 @@ double computeVehicleTime(struct satR3 satarr[], int n, struct vehR3 veh)
   int i;
   double Ni;
   double result = 0;
+  double nextTime;
 
   if (DEBUGTIME == 1)
     {
       printf("inside computeVehicleTime\n");
-      printf("c: %.15lf n: %d\n", c, n);
     }
 
 
   for (i=0; i<n; i++)
     {
       Ni = computeNi(satarr[i], veh);
-      result += Ni + c*satarr[i].t;
+      nextTime = Ni/c + satarr[i].t;
+      if (DEBUGTIME == 1) printf("v_t using satellite %d: %lf\n", satarr[i].idx, nextTime);
+      result += nextTime;
     }
   
-  result = result/(n*c);
+  result = result/(n);
+  printf("computed time: %.16lf\n", result);
+
   return result;
 }
 
@@ -879,15 +926,6 @@ void convertCoords(struct vehR3 vehCart, struct latlong *vehLL)
 {
   //printf("--constants pi: %lf s: %lf R: %lf\n", pi, s, R);
   //extern double pi, s, R;
-  int EW, NS;
-  int lmm, lmd;
-  double lm;
-  double lms;
-  double h;
-  double x = vehCart.x;
-  double y = vehCart.y;
-  double z = vehCart.z;
-  double t = vehCart.t;
 
   unrotate(&vehCart);
   toLatitude(vehCart, vehLL);
@@ -915,7 +953,6 @@ void unrotate(struct vehR3 *v)
 void toLatitude(struct vehR3 v, struct latlong *ll)
 {
   double ps;
-  int psm, psd;
   //conversions on p.11
   if ( v.x*v.x+v.y*v.y != 0 ) {
     ps = atan(v.z/(sqrt(v.x*v.x+v.y*v.y)));
@@ -941,9 +978,9 @@ void toLatitude(struct vehR3 v, struct latlong *ll)
   // round down to get degrees, use remainder for minutes, seconds
   double temp;
   ll->psd = (int) ps; 
-  temp = (ps - psd)*60.0; // minutes + remainder
+  temp = (ps - ll->psd)*60.0; // minutes + remainder
   ll->psm = (int) temp;
-  ll->pss = (temp - psm)*60; //seconds + remainder (as desired)
+  ll->pss = (temp - ll->psm)*60; //seconds + remainder (as desired)
 
 }
 
@@ -987,7 +1024,8 @@ void toLongitude(struct vehR3 v, struct latlong *ll)
 void computeInitialVehicle(struct vehR3 *v)
 {
   // using b12 (11) as starting point 
-  struct latlong ll = {0.0, 40, 45, 55.0, 1, 111, 50, 58.0, -1, 1372.0};
+  struct latlong ll = {12123.0, 40, 45, 55.0, 1, 111, 50, 58.0, -1, 1372.0};
 
   convertVeh(&ll, v);
+  rotateVeh(v);
 }

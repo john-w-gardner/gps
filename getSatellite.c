@@ -11,7 +11,7 @@
 
 #define MAXLEN 1000
 
-static struct satR3 satbuf = {0,0,0,0,-1};
+static struct satR3 satbuf = {0,0,0,0,-1,0};
 
 // read satellites for current epoch
 int getSatelliteArray(struct satR3 *satarr, int *nsat)
@@ -20,6 +20,9 @@ int getSatelliteArray(struct satR3 *satarr, int *nsat)
   int status = 0;
   struct satR3 *iptr;
   iptr = satarr;
+
+  //printf("satbuf in getSatelliteArray: \n");
+  //printSatR3(satbuf);
 
   if (satbuf.idx == -1) // buffer empty
     {
@@ -40,7 +43,6 @@ int getSatelliteArray(struct satR3 *satarr, int *nsat)
     return -1;
   else
     {
-      updateSatellite(&satbuf, satarr);
       return 1; 
     }
 
@@ -69,7 +71,10 @@ int getSatellite(struct satR3 *s)
       return s->idx;
     }
   else 
-    return -1;
+    {
+      //printSatR3(*s);
+      return -1;
+    }
 }        
 
 

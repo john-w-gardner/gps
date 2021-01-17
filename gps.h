@@ -8,13 +8,6 @@ includes functions from satFuns.c and recFuns.c
 #define NARGS 10 // number of fields from vehicle 
 #define LINELEN 200
 
-// debug 
-#define CHECKSAT 0
-#define CHECKITER 0
-#define CHECKF37 0
-#define CHECKFP39 0
-#define CHECKVEH 0
-#define CHECKx35 0
 
 /* global constants: (read from datad.dat)
    pi = radians in semicircle
@@ -96,8 +89,10 @@ void convertVeh(struct latlong *l, struct vehR3 *r) ;
 // RECEIVER ONLY FUNCTIONS
 //void printSatellite(struct satR3 s);
 void printVehicle(struct latlong v);
+void printVehR3(struct vehR3 v);
+void printSatR3(struct satR3 s);
 void computeVehLocation(struct satR3 satarr[], struct vehR3 *veh, int nsat);
-void computeF(struct satR3 satarr[], int nsat, struct vehR3 veh, double (*F)[]);
+void computeF(struct satR3 satarr[], int nsat, struct vehR3 veh, double F[]);
 double computeAi(struct satR3 si, struct satR3 si1, struct vehR3 veh);
 double computeNi(struct satR3 s, struct vehR3 v);
 double computeXi(struct satR3 si, struct satR3 si1, struct vehR3 v);
@@ -117,6 +112,7 @@ double fyz(struct satR3 satarr[], int nsat, struct vehR3 veh);
 double computeYz(struct satR3 si, struct satR3 si1, struct vehR3 v);
 double fzz(struct satR3 satarr[], int nsat, struct vehR3 veh);
 double computeZz(struct satR3 si, struct satR3 si1, struct vehR3 v);
+void updateVehLocation(struct vehR3 *v, double s[]);
 void readDataDatII(double *pi, double *c, double *R, double *s);
 double computeVehicleTime(struct satR3 satarr[], int n, struct vehR3 veh);
 void convertCoords(struct vehR3 vehCart, struct latlong *vehLL);

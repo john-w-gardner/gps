@@ -25,18 +25,21 @@ int main()
   int i;
   struct vehR3 vehicle;
   struct latlong cartVehicle;
+  struct satR3 satArray[NSAT]; 
 
   // initial position
   computeInitialVehicle(&vehicle);
-
-  // set up satellite array
-  struct satR3 satArray[NSAT]; 
+  printVehR3(vehicle);
 
   // while new epoch of satellites available
   while (done == 0)
     {
-      status = getSatelliteArray(satArray, &nsat);
       epoch++; 
+      // initial guess for v_t = arbitrary satellite time
+      if (epoch==1) vehicle.t = satArray[0].t; 
+
+      // get current group of satellites
+      status = getSatelliteArray(satArray, &nsat);
       printf("epoch: %d nsat: %d\n", epoch, nsat);
 
       // calculations
