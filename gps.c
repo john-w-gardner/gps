@@ -124,8 +124,6 @@ void readDataDat(double *pi, double *c, double *R, double *s, struct satellite (
   // grab satellites
   int i;
   for (i = 0; i < NSAT; i++) {
-    //printf("new satellite %d\n", i);
-
     fgets(buf, NCHAR, dd);
     status = sscanf(buf, "%lf", &(*sArray)[i].u1); // would be simpler with array of pointers..
     fgets(buf, NCHAR, dd);
@@ -537,36 +535,27 @@ void printSatR3(struct satR3 s)
 void computeVehLocation(struct satR3 satarr[], struct vehR3 *veh, int nsat)
 {
   int nstep = 0;
-  double stepsize=1;
-  double tol = 0.01;
+  double steplength=1;
+  double tol = RECTOL; 
   int ndim = 3;
   double s[ndim];
   double F[ndim];
   double J[ndim*ndim];
 
-  //printf("inside computeVehLocation\n");
-  while (stepsize > tol && nstep++ < MAXSTEP)
+  while (steplength > tol && nstep++ < MAXSTEP)
     {
       nstep++;
-      //printf("nstep: %d\n", nstep);
       computeF(satarr, nsat, *veh, F);
       computeJ(satarr, nsat, *veh, J);
-      //printf("J and F:\n");
-      //printmat(J, ndim, ndim);
-      //printmat(F, ndim, 1);
-
-      scaleVec(&F, -1.0, ndim);
-      qrSolve(J, 3, &s, F);
-      //printf("after qrSolve\n");
-      //printf("want F ~0.. |F| = %.16lf\n", eucnorm(F, 3));
-      //testSolve(J, 3, s, F);
+      scaleVec(&F, -1.0, ndim); 
+      printf("J:\n");
+      printmat(J, ndim, ndim);
+      cholSolve(J, 3, &s, F); // solve Js = -F
       updateVehLocation(veh, s);
-      stepsize = eucnorm(s, 3);
+      steplength = eucnorm(s, 3);
+      printf("steplength: %.16lf\n", steplength);
     }
-  // printf("result location:\n");
-  // printVehR3(*veh);
 }
-
 
 /* 
    compute gradient of least squares function as in (66)
@@ -581,10 +570,8 @@ void computeF(struct satR3 satarr[], int nsat, struct vehR3 veh, double F[])
   double Ai, Xi, Yi, Zi;
   int i;
   
-  //  printf("inside computeF\n");
   for (i=0; i<nsat-2; i++)
     {
-      //  printSatR3(satarr[i]);
       Ai = computeAi(satarr[i], satarr[i+1], veh);
       Xi = computeXi(satarr[i], satarr[i+1], veh);
       Yi = computeYi(satarr[i], satarr[i+1], veh);
@@ -655,7 +642,6 @@ double computeZi(struct satR3 si, struct satR3 si1, struct vehR3 v)
 //void computeJ(struct satR3 satarr[], int nsat, struct vehR3 veh, double (*J)[])
 void computeJ(struct satR3 satarr[], int nsat, struct vehR3 veh, double J[])
 {
-  //printf("inside computeJ\n");
   J[0] = fxx(satarr, nsat, veh);
   J[1] = J[3] = fxy(satarr, nsat, veh);
   J[2] = J[6] = fxz(satarr, nsat, veh);
@@ -676,7 +662,6 @@ double fxx(struct satR3 satarr[], int nsat, struct vehR3 veh)
   double result = 0;
   double Xi, Ai, Xx;
   int i;
-  //printf("inside fxx\n");
 
   for (i=0; i<nsat-2; i++)
     {
@@ -890,8 +875,11 @@ void readDataDatII(double *pi, double *c, double *R, double *s)
 }
 
 
-// compute t_s given vehicle location
-// use all satellites and eqn (42)
+/* compute t_s given vehicle location
+ use all satellites and eqn ie
+ solve ||x_v - x_s|| = c(t_v - t_s) for t_v 
+ for each satellite then take average
+*/
 double computeVehicleTime(struct satR3 satarr[], int n, struct vehR3 veh)
 {
   int i;
@@ -904,7 +892,6 @@ double computeVehicleTime(struct satR3 satarr[], int n, struct vehR3 veh)
       printf("inside computeVehicleTime\n");
     }
 
-
   for (i=0; i<n; i++)
     {
       Ni = computeNi(satarr[i], veh);
@@ -913,9 +900,7 @@ double computeVehicleTime(struct satR3 satarr[], int n, struct vehR3 veh)
       result += nextTime;
     }
   
-  result = result/(n);
-  printf("computed time: %.16lf\n", result);
-
+  result = result/n;
   return result;
 }
 
@@ -924,9 +909,6 @@ double computeVehicleTime(struct satR3 satarr[], int n, struct vehR3 veh)
 // (testing purposes - only receiver actually uses this)
 void convertCoords(struct vehR3 vehCart, struct latlong *vehLL) 
 {
-  //printf("--constants pi: %lf s: %lf R: %lf\n", pi, s, R);
-  //extern double pi, s, R;
-
   unrotate(&vehCart);
   toLatitude(vehCart, vehLL);
   toLongitude(vehCart, vehLL);
@@ -995,7 +977,7 @@ void toLongitude(struct vehR3 v, struct latlong *ll)
     else
       lm = 2.0*pi + atan(v.y/v.x);
   }  
-  else if (v.x == 0.0) // longitude (lambda) could be anything
+  else if (v.x == 0.0) 
     {
       lm = 0.0; 
     }
@@ -1010,8 +992,6 @@ void toLongitude(struct vehR3 v, struct latlong *ll)
   }
   else 
     ll->EW = 1;
-
-  //printf("ps: %lf lm: %lf\n", ps, lm);
 
   // decompose into degrees, minutes, seconds
   ll->lmd = (int) lm; 
