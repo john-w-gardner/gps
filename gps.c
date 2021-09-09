@@ -548,12 +548,12 @@ void computeVehLocation(struct satR3 satarr[], struct vehR3 *veh, int nsat)
       computeF(satarr, nsat, *veh, F);
       computeJ(satarr, nsat, *veh, J);
       scaleVec(&F, -1.0, ndim); 
-      printf("J:\n");
-      printmat(J, ndim, ndim);
+      // printf("J:\n");
+      // printmat(J, ndim, ndim);
       cholSolve(J, 3, &s, F); // solve Js = -F
       updateVehLocation(veh, s);
       steplength = eucnorm(s, 3);
-      printf("steplength: %.16lf\n", steplength);
+      // printf("steplength: %.16lf\n", steplength);
     }
 }
 
