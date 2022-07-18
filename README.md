@@ -1,7 +1,9 @@
 Model GPS receiver. 
 Uses trilateration to compute location given satellite data. 
 Location and time data are given in the following format: 
+```
 <time> <latitude minutes> <latitude degrees> <latitude seconds> <northern/southern hemisphere> <longitude minutes> <longitude degrees> <longitude seconds> <eastern/western hemisphere> <elevation>
+```
 The (Java) vehicle uses `vehicle.class` and `angles.class`. 
 To compile satellite and receiver programs, run
 ```
