@@ -10,7 +10,7 @@ To compile satellite and receiver programs, run
 gcc gps.c receiver.c matops.c cholSolve.c getSatellite.c -o receiver
 gcc gps.c satellite.c matops.c cholSolve.c getSatellite.c -o satellite
 ```
-`gps.c` contains helper functions for the satellite and receiver while `matops.c`, `cholSolve`, and `qrSolve.c` contain linear algebra operations. 
+`gps.c` contains helper functions for the satellite and receiver while `matops.c` and `cholSolve` contain linear algebra operations. 
 Linear algebra files can be found in `nla` repository. 
 As an example, the following shows location data for a trip from Salt Lake City to the point of zero latitude and longitude:
 ```
